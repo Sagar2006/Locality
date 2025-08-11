@@ -17,18 +17,15 @@ jobs:
       uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.32.4'
-    
-    - name: Changing Directory
-      run: cd locality
       
     - name: Cleaning Flutter
-      run: flutter clean
+      run: cd locality && flutter clean
       
     - name: Install dependencies
-      run: flutter pub get
+      run: cd locality && flutter pub get
 
     - name: Build APK
-      run: flutter build apk --release
+      run: cd locality && flutter build apk --release
 
     - name: Delete Existing Releases (if any)
       uses: dev-drprasad/delete-older-releases@v0.2.1
@@ -44,6 +41,6 @@ jobs:
         name: Latest Android APK
         draft: false
         prerelease: false
-        artifacts: build/app/outputs/flutter-apk/app-release.apk
+        artifacts: locality/build/app/outputs/flutter-apk/app-release.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
