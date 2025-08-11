@@ -41,6 +41,6 @@ jobs:
         name: Latest Android APK
         draft: false
         prerelease: false
-        artifacts: locality/build/app/outputs/flutter-apk/app-release.apk
+        artifacts: build/app/outputs/flutter-apk/app-release.apk
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
