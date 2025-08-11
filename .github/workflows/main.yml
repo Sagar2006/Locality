@@ -17,6 +17,10 @@ jobs:
       uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.32.4'
+    
+    - name: Changing Directory
+      run: cd locality
+      
     - name: Cleaning Flutter
       run: flutter clean
       
