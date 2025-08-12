@@ -13,6 +13,20 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    # Set up Java 17 for AGP 8+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    # Set up Android SDK 35 (API level 35)
+    - name: Install Android SDK 35
+      uses: android-actions/setup-android@v3
+      with:
+        api-level: 35
+        # Optionally specify build-tools, etc.
+
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
