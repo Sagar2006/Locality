@@ -46,6 +46,7 @@ jobs:
           name: Latest Releases
           draft: false
           prerelease: false
+          allowUpdates: true
           artifacts: ./artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
