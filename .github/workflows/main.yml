@@ -23,7 +23,7 @@ jobs:
         run: flutter build apk --release
       - name: Upload APK
         if: success()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
@@ -45,7 +45,7 @@ jobs:
         run: flutter build ipa --release --no-codesign
       - name: Upload IPA
         if: success()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: runner-ipa
           path: build/ios/ipa/Runner.ipa
@@ -69,7 +69,7 @@ jobs:
           create-dmg build/macos/Build/Products/Release/Runner.app build/macos/Build/Products/Release/
       - name: Upload DMG
         if: success()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: runner-dmg
           path: build/macos/Build/Products/Release/*.dmg
@@ -80,19 +80,19 @@ jobs:
     steps:
       - name: Download Android APK
         if: needs.build-android.result == 'success'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: app-release-apk
           path: ./artifacts
       - name: Download iOS IPA
         if: needs.build-ios.result == 'success'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: runner-ipa
           path: ./artifacts
       - name: Download macOS DMG
         if: needs.build-macos.result == 'success'
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: runner-dmg
           path: ./artifacts
