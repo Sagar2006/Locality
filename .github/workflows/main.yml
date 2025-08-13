@@ -51,8 +51,8 @@ jobs:
         run: sudo gem install cocoapods
       - name: Get dependencies
         run: flutter pub get
-      - name: Build iOS
-        run: flutter build ios --release
+      - name: Build iOS (simulator, no code signing)
+        run: flutter build ios --release --no-codesign
 
   build-macos:
     runs-on: macos-latest
