@@ -28,54 +28,8 @@ jobs:
           name: app-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
-  build-ios:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-      - name: Install CocoaPods
-        run: sudo gem install cocoapods
-      - name: Get dependencies
-        run: flutter pub get
-      - name: Build iOS IPA
-        run: flutter build ipa --release --no-codesign
-      - name: Upload IPA
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: runner-ipa
-          path: build/ios/ipa/Runner.ipa
-
-  build-macos:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: stable
-      - name: Get dependencies
-        run: flutter pub get
-      - name: Build macOS
-        run: flutter build macos --release
-      - name: Create DMG installer
-        run: |
-          npm install -g create-dmg
-          create-dmg build/macos/Build/Products/Release/Runner.app build/macos/Build/Products/Release/
-      - name: Upload DMG
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: runner-dmg
-          path: build/macos/Build/Products/Release/*.dmg
-
   release:
-    needs: [build-android, build-ios, build-macos]
+    needs: [build-android]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -84,18 +38,6 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: app-release-apk
-          path: ./artifacts
-      - name: Download iOS IPA
-        if: needs.build-ios.result == 'success'
-        uses: actions/download-artifact@v4
-        with:
-          name: runner-ipa
-          path: ./artifacts
-      - name: Download macOS DMG
-        if: needs.build-macos.result == 'success'
-        uses: actions/download-artifact@v4
-        with:
-          name: runner-dmg
           path: ./artifacts
       - name: Create or Update Release
         uses: ncipollo/release-action@v1
