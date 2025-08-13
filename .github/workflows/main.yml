@@ -30,11 +30,14 @@ jobs:
       - name: Create or Update Release
         uses: ncipollo/release-action@v1
         with:
-          tag: latest-apk
-          name: Latest Android APK
+          tag: latest-release
+          name: Latest Releases
           draft: false
           prerelease: false
-          artifacts: build/app/outputs/flutter-apk/app-release.apk
+          artifacts: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/ios/iphoneos/Runner.app
+            build/macos/Build/Products/Release/Runner.app
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
