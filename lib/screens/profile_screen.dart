@@ -5,6 +5,7 @@ import 'package:locality/models/user_model.dart';
 import 'package:locality/services/auth_service.dart';
 import 'package:locality/services/cloudinary_service.dart';
 import 'package:locality/services/database_service.dart';
+import 'package:locality/screens/auth/login_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -394,6 +395,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     OutlinedButton.icon(
                                       onPressed: () async {
                                         await _authService.signOut();
+                                        if (!mounted) return;
+                                        Navigator.of(context).pushAndRemoveUntil(
+                                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                                          (route) => false,
+                                        );
                                       },
                                       icon: const Icon(Icons.logout),
                                       label: const Text('Logout'),

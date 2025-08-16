@@ -6,6 +6,7 @@ import 'package:locality/screens/add_item_screen.dart';
 import 'package:locality/screens/my_items_screen.dart';
 import 'package:locality/screens/profile_screen.dart';
 import 'package:locality/screens/requests_screen.dart';
+import 'package:locality/screens/auth/login_screen.dart';
 import 'package:locality/services/auth_service.dart';
 import 'package:locality/services/database_service.dart';
 import 'package:locality/widgets/item_card.dart';
@@ -180,6 +181,11 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('Logout'),
               onTap: () async {
                 await _authService.signOut();
+                if (!mounted) return;
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                  (route) => false,
+                );
               },
             ),
           ],

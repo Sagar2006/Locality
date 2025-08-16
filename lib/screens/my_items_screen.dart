@@ -3,6 +3,8 @@ import 'package:locality/models/item_model.dart';
 import 'package:locality/services/auth_service.dart';
 import 'package:locality/services/database_service.dart';
 import 'package:locality/widgets/item_card.dart';
+import 'package:locality/screens/item_details_screen.dart';
+import 'package:locality/screens/add_item_screen.dart';
 
 class MyItemsScreen extends StatefulWidget {
   const MyItemsScreen({Key? key}) : super(key: key);
@@ -37,9 +39,10 @@ class _MyItemsScreenState extends State<MyItemsScreen> {
         throw Exception('User not authenticated');
       }
 
-      final items = await _databaseService.getItemsByOwner(currentUser.uid);
+      final allItems = await _databaseService.getItems();
+      final myItems = allItems.where((item) => item.ownerId.trim() == currentUser.uid.trim()).toList();
       setState(() {
-        _myItems = items;
+        _myItems = myItems;
         _isLoading = false;
       });
     } catch (e) {
@@ -60,6 +63,12 @@ class _MyItemsScreenState extends State<MyItemsScreen> {
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadMyItems,
+            tooltip: 'Refresh',
+          ),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => Navigator.pushNamed(context, '/add-item'),
+            tooltip: 'Add Item',
           ),
         ],
       ),
@@ -70,14 +79,18 @@ class _MyItemsScreenState extends State<MyItemsScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      Icon(Icons.error_outline, color: Colors.red[400], size: 60),
+                      const SizedBox(height: 16),
                       Text(
                         'Error: $_error',
-                        style: const TextStyle(color: Colors.red),
+                        style: const TextStyle(color: Colors.red, fontSize: 18),
+                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 16),
-                      ElevatedButton(
+                      ElevatedButton.icon(
                         onPressed: _loadMyItems,
-                        child: const Text('Retry'),
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Retry'),
                       ),
                     ],
                   ),
@@ -87,95 +100,149 @@ class _MyItemsScreenState extends State<MyItemsScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(
-                            Icons.inventory,
+                          Icon(
+                            Icons.inventory_2_outlined,
                             size: 80,
-                            color: Colors.grey,
+                            color: Colors.grey[400],
                           ),
                           const SizedBox(height: 16),
                           const Text(
-                            'You have not listed any items yet',
-                            style: TextStyle(fontSize: 18),
+                            'No items listed yet',
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
                           ),
                           const SizedBox(height: 16),
                           ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              Navigator.pushNamed(context, '/add-item');
-                            },
+                            onPressed: () => Navigator.pushNamed(context, '/add-item'),
                             icon: const Icon(Icons.add),
                             label: const Text('Add Item'),
+                            style: ElevatedButton.styleFrom(
+                              minimumSize: const Size(140, 48),
+                              textStyle: const TextStyle(fontSize: 16),
+                            ),
                           ),
                         ],
                       ),
                     )
-                  : ListView.builder(
+                  : ListView.separated(
                       padding: const EdgeInsets.all(16.0),
                       itemCount: _myItems.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
                         final item = _myItems[index];
-                        return Dismissible(
-                          key: Key(item.id),
-                          direction: DismissDirection.endToStart,
-                          background: Container(
-                            alignment: Alignment.centerRight,
-                            padding: const EdgeInsets.only(right: 20.0),
-                            color: Colors.red,
-                            child: const Icon(
-                              Icons.delete,
-                              color: Colors.white,
-                            ),
-                          ),
-                          confirmDismiss: (direction) async {
-                            return await showDialog(
-                              context: context,
-                              builder: (context) => AlertDialog(
-                                title: const Text('Delete Item'),
-                                content: Text(
-                                    'Are you sure you want to delete ${item.name}?'),
-                                actions: [
-                                  TextButton(
-                                    onPressed: () => Navigator.of(context).pop(false),
-                                    child: const Text('Cancel'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () => Navigator.of(context).pop(true),
-                                    child: const Text(
-                                      'Delete',
-                                      style: TextStyle(color: Colors.red),
+                        return Card(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          elevation: 3,
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                            leading: ClipRRect(
+                              borderRadius: BorderRadius.circular(8),
+                              child: item.imageUrls.isNotEmpty
+                                  ? Image.network(
+                                      item.imageUrls[0],
+                                      width: 60,
+                                      height: 60,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (context, error, stackTrace) => Container(
+                                        color: Colors.grey[200],
+                                        width: 60,
+                                        height: 60,
+                                        child: const Icon(Icons.image_not_supported, color: Colors.grey, size: 32),
+                                      ),
+                                    )
+                                  : Container(
+                                      color: Colors.grey[200],
+                                      width: 60,
+                                      height: 60,
+                                      child: const Icon(Icons.image, color: Colors.grey, size: 32),
                                     ),
+                            ),
+                            title: Text(
+                              item.name,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  item.category,
+                                  style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w500),
+                                ),
+                                // ...existing code...
+                                  Text(
+                                    '\$${item.price.toStringAsFixed(2)} / day',
+                                    style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.w500),
                                   ),
-                                ],
-                              ),
-                            );
-                          },
-                          onDismissed: (direction) async {
-                            try {
-                              await _databaseService.deleteItem(item.id);
-                              setState(() {
-                                _myItems.removeAt(index);
-                              });
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('${item.name} deleted'),
-                                  action: SnackBarAction(
-                                    label: 'Undo',
-                                    onPressed: () {
-                                      // Implement undo functionality if needed
-                                    },
+                                  Text(
+                                    '\$${item.price.toStringAsFixed(2)} / day',
+                                    style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.w500),
                                   ),
+                              ],
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.edit, color: Colors.amber),
+                                  tooltip: 'Edit',
+                                  onPressed: () async {
+                                    await Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => AddItemScreen(item: item),
+                                      ),
+                                    );
+                                    _loadMyItems();
+                                  },
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.delete, color: Colors.red),
+                                  tooltip: 'Delete',
+                                  onPressed: () async {
+                                    final confirm = await showDialog<bool>(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('Delete Item'),
+                                        content: Text('Are you sure you want to delete "${item.name}"?'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(false),
+                                            child: const Text('Cancel'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => Navigator.of(context).pop(true),
+                                            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                    if (confirm == true) {
+                                      try {
+                                        await _databaseService.deleteItem(item.id);
+                                        setState(() {
+                                          _myItems.removeAt(index);
+                                        });
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Item deleted')),
+                                        );
+                                      } catch (e) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('Failed to delete item: $e'), backgroundColor: Colors.red),
+                                        );
+                                      }
+                                    }
+                                  },
+                                ),
+                              ],
+                            ),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ItemDetailsScreen(item: item),
                                 ),
                               );
-                            } catch (e) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('Failed to delete item: ${e.toString()}'),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
-                          },
-                          child: ItemCard(item: item),
+                            },
+                          ),
                         );
                       },
                     ),

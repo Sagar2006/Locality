@@ -6,8 +6,10 @@ import 'package:locality/services/auth_service.dart';
 import 'package:locality/services/cloudinary_service.dart';
 import 'package:locality/services/database_service.dart';
 
+
 class AddItemScreen extends StatefulWidget {
-  const AddItemScreen({Key? key}) : super(key: key);
+  final Item? item;
+  const AddItemScreen({Key? key, this.item}) : super(key: key);
 
   @override
   _AddItemScreenState createState() => _AddItemScreenState();
@@ -23,6 +25,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   
   final List<String> _categories = ['Electronics', 'Tools', 'Furniture', 'Vehicles', 'Sports', 'Others'];
   final List<XFile> _selectedImages = [];
+  List<String> _existingImageUrls = [];
   final ImagePicker _picker = ImagePicker();
   final AuthService _authService = AuthService();
   final DatabaseService _databaseService = DatabaseService();
@@ -31,6 +34,20 @@ class _AddItemScreenState extends State<AddItemScreen> {
   bool _isLoading = false;
   String _error = '';
   
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.item != null) {
+      _nameController.text = widget.item!.name;
+      _descriptionController.text = widget.item!.description;
+      _priceController.text = widget.item!.price.toString();
+      _locationController.text = widget.item!.location;
+      _selectedCategory = widget.item!.category;
+      _existingImageUrls = List<String>.from(widget.item!.imageUrls);
+    }
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -66,46 +83,60 @@ class _AddItemScreenState extends State<AddItemScreen> {
   
   Future<void> _submitItem() async {
     if (_formKey.currentState!.validate()) {
-      if (_selectedImages.isEmpty) {
-        setState(() {
-          _error = 'Please add at least one image';
-        });
-        return;
-      }
-      
       setState(() {
         _isLoading = true;
         _error = '';
       });
-      
       try {
-        // Upload images to Cloudinary
-        final List<File> files = _selectedImages.map((xFile) => File(xFile.path)).toList();
-        final List<String> imageUrls = await _cloudinaryService.uploadMultipleImages(files);
-        
-        if (imageUrls.isEmpty) {
-          throw Exception('Failed to upload images');
-        }
-        
-        // Create item in database
         final currentUser = _authService.currentUser;
         if (currentUser == null) {
           throw Exception('User not authenticated');
         }
-        
-        final item = Item(
-          id: '', // Will be set by database service
-          ownerId: currentUser.uid,
-          name: _nameController.text.trim(),
-          description: _descriptionController.text.trim(),
-          category: _selectedCategory,
-          price: double.parse(_priceController.text.trim()),
-          imageUrls: imageUrls,
-          location: _locationController.text.trim(),
-        );
-        
-        await _databaseService.createItem(item);
-        
+        List<String> newImageUrls = [];
+        if (_selectedImages.isNotEmpty) {
+          // Upload new images
+          final List<File> files = _selectedImages.map((xFile) => File(xFile.path)).toList();
+          newImageUrls = await _cloudinaryService.uploadMultipleImages(files);
+          if (newImageUrls.isEmpty) {
+            throw Exception('Failed to upload images');
+          }
+        }
+        // Combine existing and new images
+        final allImageUrls = [..._existingImageUrls, ...newImageUrls];
+        if (allImageUrls.isEmpty) {
+          setState(() {
+            _error = 'Please add at least one image';
+          });
+          return;
+        }
+
+        if (widget.item == null) {
+          // Add new item
+          final item = Item(
+            id: '',
+            ownerId: currentUser.uid,
+            name: _nameController.text.trim(),
+            description: _descriptionController.text.trim(),
+            category: _selectedCategory,
+            price: double.parse(_priceController.text.trim()),
+            imageUrls: allImageUrls,
+            location: _locationController.text.trim(),
+          );
+          await _databaseService.createItem(item);
+        } else {
+          // Update existing item
+          final updatedItem = Item(
+            id: widget.item!.id,
+            ownerId: widget.item!.ownerId,
+            name: _nameController.text.trim(),
+            description: _descriptionController.text.trim(),
+            category: _selectedCategory,
+            price: double.parse(_priceController.text.trim()),
+            imageUrls: allImageUrls,
+            location: _locationController.text.trim(),
+          );
+          await _databaseService.updateItem(updatedItem);
+        }
         if (!mounted) return;
         Navigator.pop(context);
       } catch (e) {
@@ -126,7 +157,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add New Item'),
+        title: Text(widget.item == null ? 'Add New Item' : 'Edit Item'),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -168,7 +199,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
                               ],
                             ),
                           ),
-                          
                           // Add from Camera Button
                           Container(
                             width: 100,
@@ -188,8 +218,44 @@ class _AddItemScreenState extends State<AddItemScreen> {
                               ],
                             ),
                           ),
-                          
-                          // Selected Images
+                          // Existing Images (URLs)
+                          ..._existingImageUrls.asMap().entries.map((entry) {
+                            final index = entry.key;
+                            final url = entry.value;
+                            return Stack(
+                              children: [
+                                Container(
+                                  width: 100,
+                                  height: 120,
+                                  margin: const EdgeInsets.only(right: 8.0),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8.0),
+                                    image: DecorationImage(
+                                      image: NetworkImage(url),
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  child: CircleAvatar(
+                                    radius: 14,
+                                    backgroundColor: Colors.red,
+                                    child: IconButton(
+                                      padding: EdgeInsets.zero,
+                                      icon: const Icon(Icons.close, size: 18, color: Colors.white),
+                                      onPressed: () {
+                                        setState(() {
+                                          _existingImageUrls.removeAt(index);
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                          // Selected New Images
                           ..._selectedImages.asMap().entries.map((entry) {
                             final index = entry.key;
                             final image = entry.value;
@@ -339,9 +405,9 @@ class _AddItemScreenState extends State<AddItemScreen> {
                             borderRadius: BorderRadius.circular(8.0),
                           ),
                         ),
-                        child: const Text(
-                          'Add Item',
-                          style: TextStyle(fontSize: 16),
+                        child: Text(
+                          widget.item == null ? 'Add Item' : 'Update Item',
+                          style: const TextStyle(fontSize: 16),
                         ),
                       ),
                     ),
