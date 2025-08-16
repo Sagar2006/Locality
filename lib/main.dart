@@ -76,7 +76,7 @@ class MyApp extends StatelessWidget {
           selectedColor: colorScheme.secondary,
           labelStyle: const TextStyle(fontFamily: 'Poppins'),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
