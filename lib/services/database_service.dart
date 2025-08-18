@@ -9,57 +9,32 @@ class DatabaseService {
   // Users
   Future<void> createUser(UserModel user) async {
     try {
-      print('DatabaseService: Creating user with UID: ${user.uid}');
-      print('DatabaseService: User data: ${user.toMap()}');
-      
-      final ref = _database.ref().child('users').child(user.uid);
-      await ref.set(user.toMap());
-      
-      print('DatabaseService: User created successfully');
-      
-      // Verify the user was created
-      final verification = await ref.get();
-      if (verification.exists) {
-        print('DatabaseService: User verification successful');
-      } else {
-        print('DatabaseService: WARNING - User not found after creation!');
-      }
+      await _database.ref().child('users').child(user.uid).set(user.toMap());
     } catch (e) {
-      print('DatabaseService: Error creating user: $e');
-      print('DatabaseService: Stack trace: ${StackTrace.current}');
+      print('Error creating user: $e');
       throw e;
     }
   }
 
   Future<UserModel?> getUser(String uid) async {
     try {
-      print('DatabaseService.getUser: Fetching user $uid');
       final ref = _database.ref().child('users').child(uid);
       final snapshot = await ref.get();
-      print('DatabaseService.getUser: Snapshot exists: ${snapshot.exists}');
-      
       if (snapshot.exists) {
         final raw = snapshot.value;
-        print('DatabaseService.getUser: Raw data type: ${raw.runtimeType}');
-        print('DatabaseService.getUser: Raw data: $raw');
-        
         // Realtime DB often returns Map<dynamic, dynamic>
         if (raw is Map) {
           final data = Map<String, dynamic>.from(raw as Map);
-          print('DatabaseService.getUser: Converted data: $data');
-          final user = UserModel.fromMap(data, uid); // Use uid instead of snapshot.key
-          print('DatabaseService.getUser: Successfully created user: ${user.name}');
-          return user;
+          return UserModel.fromMap(data, snapshot.key!);
         } else {
           print('getUser($uid): Unexpected data type: ${raw.runtimeType}');
         }
       } else {
-        print('getUser($uid): No data found at path ${ref.path}');
+        print('getUser($uid): No snapshot at path ${ref.path}');
       }
       return null;
     } catch (e) {
-      print('Error getting user $uid: $e');
-      print('Stack trace: ${StackTrace.current}');
+      print('Error getting user: $e');
       return null;
     }
   }
@@ -101,32 +76,22 @@ class DatabaseService {
 
   Future<Item?> getItem(String itemId) async {
     try {
-      print('DatabaseService.getItem: Fetching item $itemId');
       final ref = _database.ref().child('items').child(itemId);
       final snapshot = await ref.get();
-      print('DatabaseService.getItem: Snapshot exists: ${snapshot.exists}');
-      
       if (snapshot.exists) {
         final raw = snapshot.value;
-        print('DatabaseService.getItem: Raw data type: ${raw.runtimeType}');
-        print('DatabaseService.getItem: Raw data: $raw');
-        
         if (raw is Map) {
           final data = Map<String, dynamic>.from(raw as Map);
-          print('DatabaseService.getItem: Converted data: $data');
-          final item = Item.fromMap(data, itemId); // Use itemId instead of snapshot.key
-          print('DatabaseService.getItem: Successfully created item: ${item.name}');
-          return item;
+          return Item.fromMap(data, snapshot.key!);
         } else {
           print('getItem($itemId): Unexpected data type: ${raw.runtimeType}');
         }
       } else {
-        print('getItem($itemId): No data found at path ${ref.path}');
+        print('getItem($itemId): No snapshot at path ${ref.path}');
       }
       return null;
     } catch (e) {
-      print('Error getting item $itemId: $e');
-      print('Stack trace: ${StackTrace.current}');
+      print('Error getting item: $e');
       return null;
     }
   }
@@ -348,117 +313,6 @@ class DatabaseService {
     } catch (e) {
       print('Error checking pending request: $e');
       return false;
-    }
-  }
-
-  // Debug method to check database connectivity and structure
-  Future<void> debugDatabaseStructure() async {
-    try {
-      print('=== DATABASE STRUCTURE DEBUG ===');
-      
-      // Check users
-      final usersSnapshot = await _database.ref().child('users').get();
-      if (usersSnapshot.exists) {
-        final usersMap = usersSnapshot.value as Map<dynamic, dynamic>?;
-        print('Users found: ${usersMap?.keys.length ?? 0}');
-        usersMap?.keys.take(3).forEach((key) {
-          print('  User ID: $key');
-        });
-      } else {
-        print('No users found in database');
-      }
-      
-      // Check items
-      final itemsSnapshot = await _database.ref().child('items').get();
-      if (itemsSnapshot.exists) {
-        final itemsMap = itemsSnapshot.value as Map<dynamic, dynamic>?;
-        print('Items found: ${itemsMap?.keys.length ?? 0}');
-        itemsMap?.keys.take(3).forEach((key) {
-          print('  Item ID: $key');
-        });
-      } else {
-        print('No items found in database');
-      }
-      
-      // Check requests
-      final requestsSnapshot = await _database.ref().child('requests').get();
-      if (requestsSnapshot.exists) {
-        final requestsMap = requestsSnapshot.value as Map<dynamic, dynamic>?;
-        print('Requests found: ${requestsMap?.keys.length ?? 0}');
-        requestsMap?.entries.take(3).forEach((entry) {
-          final requestData = Map<String, dynamic>.from(entry.value as Map);
-          print('  Request ID: ${entry.key}');
-          print('    Borrower: ${requestData['borrowerId']}');
-          print('    Lender: ${requestData['lenderId']}');
-          print('    Item: ${requestData['itemId']}');
-          print('    Status: ${requestData['status']}');
-        });
-      } else {
-        print('No requests found in database');
-      }
-      
-      print('=== END DATABASE DEBUG ===');
-    } catch (e) {
-      print('Error during database debug: $e');
-    }
-  }
-
-  // Utility method to create placeholder users for existing requests
-  Future<void> createPlaceholderUsersForRequests() async {
-    try {
-      print('=== CREATING PLACEHOLDER USERS ===');
-      
-      // Get all requests
-      final requestsSnapshot = await _database.ref().child('requests').get();
-      if (!requestsSnapshot.exists) {
-        print('No requests found, no placeholder users needed');
-        return;
-      }
-      
-      final requestsMap = requestsSnapshot.value as Map<dynamic, dynamic>;
-      final userIdsNeeded = <String>{};
-      
-      // Collect all unique user IDs from requests
-      requestsMap.entries.forEach((entry) {
-        final requestData = Map<String, dynamic>.from(entry.value as Map);
-        userIdsNeeded.add(requestData['borrowerId'] as String);
-        userIdsNeeded.add(requestData['lenderId'] as String);
-      });
-      
-      print('Found ${userIdsNeeded.length} unique user IDs in requests');
-      
-      // Check which users already exist
-      final existingUsers = <String>[];
-      for (final userId in userIdsNeeded) {
-        final userExists = await _database.ref().child('users').child(userId).get();
-        if (userExists.exists) {
-          existingUsers.add(userId);
-        }
-      }
-      
-      print('${existingUsers.length} users already exist');
-      final usersToCreate = userIdsNeeded.where((id) => !existingUsers.contains(id)).toList();
-      print('Need to create ${usersToCreate.length} placeholder users');
-      
-      // Create placeholder users
-      for (int i = 0; i < usersToCreate.length; i++) {
-        final userId = usersToCreate[i];
-        final placeholderUser = UserModel(
-          uid: userId,
-          name: 'User ${i + 1}',  // Placeholder name
-          email: 'user${i + 1}@example.com',  // Placeholder email
-          phone: '000-000-0000',  // Placeholder phone
-          location: 'Unknown Location',  // Placeholder location
-        );
-        
-        print('Creating placeholder user: ${userId} -> ${placeholderUser.name}');
-        await createUser(placeholderUser);
-      }
-      
-      print('=== PLACEHOLDER USERS CREATED ===');
-    } catch (e) {
-      print('Error creating placeholder users: $e');
-      print('Stack trace: ${StackTrace.current}');
     }
   }
 }

@@ -60,32 +60,22 @@ class _RequestsScreenState extends State<RequestsScreen>
         throw Exception('User not authenticated');
       }
       
-      print('RequestsScreen: Loading requests for user: ${currentUser.uid}');
-      
-      // Debug database structure first
-      await _databaseService.debugDatabaseStructure();
+      print('Loading requests for user: ${currentUser.uid}');
       
       // Load incoming (lender) requests
-      print('RequestsScreen: Loading incoming requests...');
       final incomingRequests = await _databaseService.getRentalRequestsByLender(currentUser.uid);
-      print('RequestsScreen: Incoming requests count: ${incomingRequests.length}');
+      print('Incoming requests count: ${incomingRequests.length}');
       
       // Load outgoing (borrower) requests
-      print('RequestsScreen: Loading outgoing requests...');
       final outgoingRequests = await _databaseService.getRentalRequestsByBorrower(currentUser.uid);
-      print('RequestsScreen: Outgoing requests count: ${outgoingRequests.length}');
+      print('Outgoing requests count: ${outgoingRequests.length}');
       
       // Debug: Print request details
-      for (final request in [...incomingRequests, ...outgoingRequests]) {
-        print('RequestsScreen: Request ${request.id}: '
-              'item=${request.itemId}, '
-              'borrower=${request.borrowerId}, '
-              'lender=${request.lenderId}, '
-              'status=${request.status}');
+      for (final request in outgoingRequests) {
+        print('Outgoing request: ${request.id}, item: ${request.itemId}, status: ${request.status}');
       }
       
       // Preload users and items for both lists
-      print('RequestsScreen: Preloading users and items...');
       await _preloadUsersAndItems([...incomingRequests, ...outgoingRequests]);
       
       setState(() {
@@ -94,16 +84,13 @@ class _RequestsScreenState extends State<RequestsScreen>
         _isLoadingIncoming = false;
         _isLoadingOutgoing = false;
       });
-      
-      print('RequestsScreen: Successfully loaded all requests');
     } catch (e) {
       setState(() {
         _error = e.toString();
         _isLoadingIncoming = false;
         _isLoadingOutgoing = false;
       });
-      print('RequestsScreen: Error loading requests: $e');
-      print('RequestsScreen: Stack trace: ${StackTrace.current}');
+      print('Error loading requests: $e');
     }
   }
   
@@ -118,139 +105,68 @@ class _RequestsScreenState extends State<RequestsScreen>
       itemIds.add(request.itemId);
     }
     
-    print('RequestsScreen: Preloading ${userIds.length} users and ${itemIds.length} items');
-    print('RequestsScreen: User IDs to load: $userIds');
-    print('RequestsScreen: Item IDs to load: $itemIds');
+    print('Preloading ${userIds.length} users and ${itemIds.length} items');
     
-    // Fetch users in parallel
-    final userFutures = userIds.map((userId) async {
+    // Fetch users
+    for (final userId in userIds) {
       if (!_usersCache.containsKey(userId)) {
-        print('RequestsScreen: Fetching user: $userId');
-        try {
-          final user = await _databaseService.getUser(userId);
-          if (user != null) {
-            _usersCache[userId] = user;
-            print('RequestsScreen: Loaded user: ${user.name} (ID: $userId)');
-          } else {
-            print('RequestsScreen: User not found: $userId');
-          }
-        } catch (e) {
-          print('RequestsScreen: Error loading user $userId: $e');
+        print('Fetching user: $userId');
+        final user = await _databaseService.getUser(userId);
+        if (user != null) {
+          _usersCache[userId] = user;
+          print('Loaded user: ${user.name}');
+        } else {
+          print('User not found: $userId');
         }
-      } else {
-        print('RequestsScreen: User $userId already in cache');
       }
-    });
+    }
     
-    // Fetch items in parallel
-    final itemFutures = itemIds.map((itemId) async {
+    // Fetch items
+    for (final itemId in itemIds) {
       if (!_itemsCache.containsKey(itemId)) {
-        print('RequestsScreen: Fetching item: $itemId');
-        try {
-          final item = await _databaseService.getItem(itemId);
-          if (item != null) {
-            _itemsCache[itemId] = item;
-            print('RequestsScreen: Loaded item: ${item.name} (ID: $itemId)');
-          } else {
-            print('RequestsScreen: Item not found: $itemId');
-          }
-        } catch (e) {
-          print('RequestsScreen: Error loading item $itemId: $e');
+        print('Fetching item: $itemId');
+        final item = await _databaseService.getItem(itemId);
+        if (item != null) {
+          _itemsCache[itemId] = item;
+          print('Loaded item: ${item.name}');
+        } else {
+          print('Item not found: $itemId');
         }
-      } else {
-        print('RequestsScreen: Item $itemId already in cache');
       }
-    });
+    }
     
-    // Wait for all futures to complete
-    await Future.wait([...userFutures, ...itemFutures]);
-    
-    print('RequestsScreen: Cache now contains ${_usersCache.length} users and ${_itemsCache.length} items');
-    print('RequestsScreen: User cache keys: ${_usersCache.keys.toList()}');
-    print('RequestsScreen: Item cache keys: ${_itemsCache.keys.toList()}');
+    print('Cache now contains ${_usersCache.length} users and ${_itemsCache.length} items');
   }
 
   Future<void> _ensureUserLoaded(String userId) async {
     if (_usersCache.containsKey(userId)) return;
-    
-    print('RequestsScreen: Manually loading user: $userId');
     try {
       final user = await _databaseService.getUser(userId);
       if (user != null) {
         setState(() {
           _usersCache[userId] = user;
         });
-        print('RequestsScreen: Successfully loaded user: ${user.name}');
-        
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Successfully loaded user data'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
       } else {
-        print('RequestsScreen: User not found in database: $userId');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('User data not found in database'),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 3),
-          ),
-        );
+        print('ensureUserLoaded: user not found $userId');
       }
     } catch (e) {
-      print('RequestsScreen: Error loading user $userId: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load user data: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      print('ensureUserLoaded error for $userId: $e');
     }
   }
 
   Future<void> _ensureItemLoaded(String itemId) async {
     if (_itemsCache.containsKey(itemId)) return;
-    
-    print('RequestsScreen: Manually loading item: $itemId');
     try {
       final item = await _databaseService.getItem(itemId);
       if (item != null) {
         setState(() {
           _itemsCache[itemId] = item;
         });
-        print('RequestsScreen: Successfully loaded item: ${item.name}');
-        
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Successfully loaded item data'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
       } else {
-        print('RequestsScreen: Item not found in database: $itemId');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Item data not found in database'),
-            backgroundColor: Colors.orange,
-            duration: Duration(seconds: 3),
-          ),
-        );
+        print('ensureItemLoaded: item not found $itemId');
       }
     } catch (e) {
-      print('RequestsScreen: Error loading item $itemId: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load item data: ${e.toString()}'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      print('ensureItemLoaded error for $itemId: $e');
     }
   }
   
@@ -324,65 +240,6 @@ class _RequestsScreenState extends State<RequestsScreen>
           ],
         ),
         actions: [
-          PopupMenuButton<String>(
-            onSelected: (value) async {
-              if (value == 'debug') {
-                print('=== MANUAL DEBUG TRIGGER ===');
-                await _databaseService.debugDatabaseStructure();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Debug info printed to console'),
-                    duration: Duration(seconds: 2),
-                  ),
-                );
-              } else if (value == 'create_users') {
-                print('=== CREATING PLACEHOLDER USERS ===');
-                try {
-                  await _databaseService.createPlaceholderUsersForRequests();
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Placeholder users created successfully'),
-                      backgroundColor: Colors.green,
-                      duration: Duration(seconds: 3),
-                    ),
-                  );
-                  // Reload requests after creating users
-                  _loadRequests();
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Failed to create users: ${e.toString()}'),
-                      backgroundColor: Colors.red,
-                      duration: Duration(seconds: 3),
-                    ),
-                  );
-                }
-              }
-            },
-            itemBuilder: (BuildContext context) => [
-              const PopupMenuItem<String>(
-                value: 'debug',
-                child: Row(
-                  children: [
-                    Icon(Icons.bug_report, size: 20),
-                    SizedBox(width: 8),
-                    Text('Debug Database'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'create_users',
-                child: Row(
-                  children: [
-                    Icon(Icons.person_add, size: 20),
-                    SizedBox(width: 8),
-                    Text('Create Missing Users'),
-                  ],
-                ),
-              ),
-            ],
-            icon: const Icon(Icons.more_vert),
-          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadRequests,
@@ -437,151 +294,35 @@ class _RequestsScreenState extends State<RequestsScreen>
                               if (borrower == null || item == null) {
                                 return Card(
                                   margin: const EdgeInsets.all(8),
-                                  color: Colors.red[50],
                                   child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
+                                    padding: const EdgeInsets.all(12.0),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Row(
-                                          children: [
-                                            Icon(Icons.warning, color: Colors.red[700], size: 20),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              'Data Loading Issue',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.red[700],
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Text(
-                                          'Request #${request.id.substring(0, 8)}...',
-                                          style: const TextStyle(fontWeight: FontWeight.bold),
-                                        ),
+                                        Text('Request #${request.id}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        const SizedBox(height: 4),
+                                        Text('Status: ${request.status}'),
+                                        Text('Borrower ID: ${request.borrowerId}'),
+                                        Text('Item ID: ${request.itemId}'),
+                                        if (borrower == null)
+                                          Text('Missing borrower data', style: const TextStyle(color: Colors.red)),
+                                        if (item == null)
+                                          Text('Missing item data', style: const TextStyle(color: Colors.red)),
                                         const SizedBox(height: 8),
-                                        Container(
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[100],
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text('Status: ${request.status.toString().split('.').last}'),
-                                              const SizedBox(height: 4),
-                                              Text('Borrower ID: ${request.borrowerId}'),
-                                              const SizedBox(height: 4),
-                                              Text('Item ID: ${request.itemId}'),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Container(
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue[50],
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: Colors.blue[200]!),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Icon(Icons.info, color: Colors.blue[700], size: 16),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    'Troubleshooting',
-                                                    style: TextStyle(
-                                                      color: Colors.blue[700],
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 14,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 4),
-                                              const Text(
-                                                'This happens when users were not properly saved during registration. Use the menu (⋮) above to "Create Missing Users" to fix this issue.',
-                                                style: TextStyle(fontSize: 12),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        if (borrower == null) ...[
-                                          Row(
-                                            children: [
-                                              Icon(Icons.person_off, color: Colors.red, size: 16),
-                                              const SizedBox(width: 4),
-                                              const Text(
-                                                'Missing borrower data',
-                                                style: TextStyle(color: Colors.red, fontWeight: FontWeight.w500),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 4),
-                                        ],
-                                        if (item == null) ...[
-                                          Row(
-                                            children: [
-                                              Icon(Icons.inventory_2_outlined, color: Colors.red, size: 16),
-                                              const SizedBox(width: 4),
-                                              const Text(
-                                                'Missing item data',
-                                                style: TextStyle(color: Colors.red, fontWeight: FontWeight.w500),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 4),
-                                        ],
-                                        const SizedBox(height: 16),
                                         Row(
                                           children: [
                                             if (borrower == null)
-                                              Expanded(
-                                                child: OutlinedButton.icon(
-                                                  onPressed: () => _ensureUserLoaded(request.borrowerId),
-                                                  icon: const Icon(Icons.refresh, size: 16),
-                                                  label: const Text('Retry Borrower'),
-                                                  style: OutlinedButton.styleFrom(
-                                                    foregroundColor: Colors.blue,
-                                                    side: const BorderSide(color: Colors.blue),
-                                                  ),
-                                                ),
+                                              OutlinedButton(
+                                                onPressed: () => _ensureUserLoaded(request.borrowerId),
+                                                child: const Text('Retry Borrower'),
                                               ),
-                                            if (borrower == null && item == null)
-                                              const SizedBox(width: 8),
+                                            const SizedBox(width: 8),
                                             if (item == null)
-                                              Expanded(
-                                                child: OutlinedButton.icon(
-                                                  onPressed: () => _ensureItemLoaded(request.itemId),
-                                                  icon: const Icon(Icons.refresh, size: 16),
-                                                  label: const Text('Retry Item'),
-                                                  style: OutlinedButton.styleFrom(
-                                                    foregroundColor: Colors.blue,
-                                                    side: const BorderSide(color: Colors.blue),
-                                                  ),
-                                                ),
+                                              OutlinedButton(
+                                                onPressed: () => _ensureItemLoaded(request.itemId),
+                                                child: const Text('Retry Item'),
                                               ),
                                           ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: ElevatedButton.icon(
-                                            onPressed: _loadRequests,
-                                            icon: const Icon(Icons.refresh),
-                                            label: const Text('Reload All Data'),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.green,
-                                              foregroundColor: Colors.white,
-                                            ),
-                                          ),
                                         ),
                                       ],
                                     ),
@@ -615,151 +356,35 @@ class _RequestsScreenState extends State<RequestsScreen>
                               if (lender == null || item == null) {
                                 return Card(
                                   margin: const EdgeInsets.all(8),
-                                  color: Colors.orange[50],
                                   child: Padding(
-                                    padding: const EdgeInsets.all(16.0),
+                                    padding: const EdgeInsets.all(12.0),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Row(
-                                          children: [
-                                            Icon(Icons.warning, color: Colors.orange[700], size: 20),
-                                            const SizedBox(width: 8),
-                                            Text(
-                                              'Data Loading Issue',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.orange[700],
-                                                fontSize: 16,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Text(
-                                          'Request #${request.id.substring(0, 8)}...',
-                                          style: const TextStyle(fontWeight: FontWeight.bold),
-                                        ),
+                                        Text('Request #${request.id}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        const SizedBox(height: 4),
+                                        Text('Status: ${request.status}'),
+                                        Text('Lender ID: ${request.lenderId}'),
+                                        Text('Item ID: ${request.itemId}'),
+                                        if (lender == null)
+                                          Text('Missing lender data', style: const TextStyle(color: Colors.red)),
+                                        if (item == null)
+                                          Text('Missing item data', style: const TextStyle(color: Colors.red)),
                                         const SizedBox(height: 8),
-                                        Container(
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey[100],
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text('Status: ${request.status.toString().split('.').last}'),
-                                              const SizedBox(height: 4),
-                                              Text('Lender ID: ${request.lenderId}'),
-                                              const SizedBox(height: 4),
-                                              Text('Item ID: ${request.itemId}'),
-                                            ],
-                                          ),
-                                        ),
-                                        const SizedBox(height: 12),
-                                        Container(
-                                          padding: const EdgeInsets.all(12),
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue[50],
-                                            borderRadius: BorderRadius.circular(8),
-                                            border: Border.all(color: Colors.blue[200]!),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Icon(Icons.info, color: Colors.blue[700], size: 16),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    'Troubleshooting',
-                                                    style: TextStyle(
-                                                      color: Colors.blue[700],
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 14,
-                                                    ),
-                                  ),
-                                                ],
-                                              ),
-                                              const SizedBox(height: 4),
-                                              const Text(
-                                                'This happens when users were not properly saved during registration. Use the menu (⋮) above to "Create Missing Users" to fix this issue.',
-                                                style: TextStyle(fontSize: 12),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        if (lender == null) ...[
-                                          Row(
-                                            children: [
-                                              Icon(Icons.person_off, color: Colors.orange, size: 16),
-                                              const SizedBox(width: 4),
-                                              const Text(
-                                                'Missing lender data',
-                                                style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 4),
-                                        ],
-                                        if (item == null) ...[
-                                          Row(
-                                            children: [
-                                              Icon(Icons.inventory_2_outlined, color: Colors.orange, size: 16),
-                                              const SizedBox(width: 4),
-                                              const Text(
-                                                'Missing item data',
-                                                style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
-                                              ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 4),
-                                        ],
-                                        const SizedBox(height: 16),
                                         Row(
                                           children: [
                                             if (lender == null)
-                                              Expanded(
-                                                child: OutlinedButton.icon(
-                                                  onPressed: () => _ensureUserLoaded(request.lenderId),
-                                                  icon: const Icon(Icons.refresh, size: 16),
-                                                  label: const Text('Retry Lender'),
-                                                  style: OutlinedButton.styleFrom(
-                                                    foregroundColor: Colors.blue,
-                                                    side: const BorderSide(color: Colors.blue),
-                                                  ),
-                                                ),
+                                              OutlinedButton(
+                                                onPressed: () => _ensureUserLoaded(request.lenderId),
+                                                child: const Text('Retry Lender'),
                                               ),
-                                            if (lender == null && item == null)
-                                              const SizedBox(width: 8),
+                                            const SizedBox(width: 8),
                                             if (item == null)
-                                              Expanded(
-                                                child: OutlinedButton.icon(
-                                                  onPressed: () => _ensureItemLoaded(request.itemId),
-                                                  icon: const Icon(Icons.refresh, size: 16),
-                                                  label: const Text('Retry Item'),
-                                                  style: OutlinedButton.styleFrom(
-                                                    foregroundColor: Colors.blue,
-                                                    side: const BorderSide(color: Colors.blue),
-                                                  ),
-                                                ),
+                                              OutlinedButton(
+                                                onPressed: () => _ensureItemLoaded(request.itemId),
+                                                child: const Text('Retry Item'),
                                               ),
                                           ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        SizedBox(
-                                          width: double.infinity,
-                                          child: ElevatedButton.icon(
-                                            onPressed: _loadRequests,
-                                            icon: const Icon(Icons.refresh),
-                                            label: const Text('Reload All Data'),
-                                            style: ElevatedButton.styleFrom(
-                                              backgroundColor: Colors.green,
-                                              foregroundColor: Colors.white,
-                                            ),
-                                          ),
                                         ),
                                       ],
                                     ),
