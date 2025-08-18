@@ -29,15 +29,25 @@ class AuthService {
   // Create user in database after registration
   Future<void> createUserInDatabase(
       UserCredential credential, String name, String phone, String location) async {
-    UserModel user = UserModel(
-      uid: credential.user!.uid,
-      name: name,
-      email: credential.user!.email ?? '',
-      phone: phone,
-      location: location,
-    );
+    try {
+      print('AuthService: Creating user in database for UID: ${credential.user!.uid}');
+      
+      UserModel user = UserModel(
+        uid: credential.user!.uid,
+        name: name,
+        email: credential.user!.email ?? '',
+        phone: phone,
+        location: location,
+      );
 
-    await _databaseService.createUser(user);
+      print('AuthService: User model created: ${user.toMap()}');
+      await _databaseService.createUser(user);
+      print('AuthService: User successfully created in database');
+    } catch (e) {
+      print('AuthService: Error creating user in database: $e');
+      print('AuthService: Stack trace: ${StackTrace.current}');
+      throw e;
+    }
   }
 
   // Sign out

@@ -1,13 +1,15 @@
 enum ItemStatus { available, rented, unavailable }
 enum RentalStatus { pending, accepted, declined, completed, canceled }
 
+
 class Item {
   final String id;
   final String ownerId;
   final String name;
   final String description;
   final String category;
-  final double price;
+  final double? pricePerDay;
+  final double? pricePerHour;
   final List<String> imageUrls;
   final ItemStatus status;
   final double rating;
@@ -20,7 +22,8 @@ class Item {
     required this.name,
     required this.description,
     required this.category,
-    required this.price,
+    this.pricePerDay,
+    this.pricePerHour,
     required this.imageUrls,
     this.status = ItemStatus.available,
     this.rating = 0,
@@ -35,7 +38,8 @@ class Item {
       'name': name,
       'description': description,
       'category': category,
-      'price': price,
+      'pricePerDay': pricePerDay,
+      'pricePerHour': pricePerHour,
       'imageUrls': imageUrls,
       'status': status.toString().split('.').last,
       'rating': rating,
@@ -51,7 +55,8 @@ class Item {
       name: map['name'] ?? '',
       description: map['description'] ?? '',
       category: map['category'] ?? '',
-      price: (map['price'] ?? 0).toDouble(),
+      pricePerDay: map['pricePerDay'] != null ? (map['pricePerDay'] as num).toDouble() : null,
+      pricePerHour: map['pricePerHour'] != null ? (map['pricePerHour'] as num).toDouble() : null,
       imageUrls: List<String>.from(map['imageUrls'] ?? []),
       status: ItemStatus.values.firstWhere(
         (e) => e.toString().split('.').last == map['status'],

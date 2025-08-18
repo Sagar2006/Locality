@@ -18,31 +18,42 @@ class ItemDetailsScreen extends StatefulWidget {
 class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
   final DatabaseService _databaseService = DatabaseService();
   final AuthService _authService = AuthService();
-  
   late PageController _imagePageController;
-  int _currentImageIndex = 0;
   UserModel? _owner;
-  bool _isLoading = true;
-  String _error = '';
-  
-  // Rental date selection
+  bool _isLoading = false;
+  bool _isRequestingRental = false;
+  bool _hasPendingRequest = false;
   DateTime? _startDate;
   DateTime? _endDate;
-  bool _isRequestingRental = false;
-  
+
+  int _currentImageIndex = 0;
+  String _error = '';
+
   @override
   void initState() {
     super.initState();
     _imagePageController = PageController();
     _loadOwnerData();
+    _checkPendingRequest();
   }
-  
-  @override
-  void dispose() {
-    _imagePageController.dispose();
-    super.dispose();
+
+  Future<void> _checkPendingRequest() async {
+    final currentUser = _authService.currentUser;
+    if (currentUser == null) return;
+    
+    try {
+      final hasPending = await _databaseService.hasPendingRequestForItem(currentUser.uid, widget.item.id);
+      if (mounted) {
+        setState(() {
+          _hasPendingRequest = hasPending;
+        });
+        print('Pending request status: $hasPending');
+      }
+    } catch (e) {
+      print('Error checking pending request: $e');
+    }
   }
-  
+
   Future<void> _loadOwnerData() async {
     setState(() {
       _isLoading = true;
@@ -120,9 +131,20 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
         throw Exception('You cannot rent your own item');
       }
       
+      // Prevent duplicate pending requests
+      final hasPending = await _databaseService.hasPendingRequestForItem(currentUser.uid, widget.item.id);
+      if (hasPending) {
+        throw Exception('You have already sent a request for this item.');
+      }
+      
       // Calculate rental duration in days
       final difference = _endDate!.difference(_startDate!).inDays + 1;
-      final totalPrice = widget.item.price * difference;
+      double totalPrice = 0;
+      if (widget.item.pricePerDay != null) {
+        totalPrice = widget.item.pricePerDay! * difference;
+      } else if (widget.item.pricePerHour != null) {
+        totalPrice = widget.item.pricePerHour! * difference * 24;
+      }
       
       final rentalRequest = RentalRequest(
         id: '', // Will be set by database service
@@ -148,6 +170,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
       setState(() {
         _startDate = null;
         _endDate = null;
+        _hasPendingRequest = true;
       });
     } catch (e) {
       if (!mounted) return;
@@ -282,13 +305,28 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                 ),
                               ),
                             ),
-                            Text(
-                              '\$${widget.item.price.toStringAsFixed(2)} / day',
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.green[700],
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                if (widget.item.pricePerDay != null)
+                                  Text(
+                                    '\$${widget.item.pricePerDay!.toStringAsFixed(2)} / day',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.green[700],
+                                    ),
+                                  ),
+                                if (widget.item.pricePerHour != null)
+                                  Text(
+                                    '\$${widget.item.pricePerHour!.toStringAsFixed(2)} / hour',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.blue[700],
+                                    ),
+                                  ),
+                              ],
                             ),
                           ],
                         ),
@@ -469,13 +507,22 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                   ],
                                 ),
                                 const SizedBox(height: 4),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    const Text('Price per day:'),
-                                    Text('\$${widget.item.price.toStringAsFixed(2)}'),
-                                  ],
-                                ),
+                                if (widget.item.pricePerDay != null)
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text('Price per day:'),
+                                      Text('\$${widget.item.pricePerDay!.toStringAsFixed(2)}'),
+                                    ],
+                                  ),
+                                if (widget.item.pricePerHour != null)
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      const Text('Price per hour:'),
+                                      Text('\$${widget.item.pricePerHour!.toStringAsFixed(2)}'),
+                                    ],
+                                  ),
                                 const Divider(height: 24),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -485,7 +532,16 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                                       style: TextStyle(fontWeight: FontWeight.bold),
                                     ),
                                     Text(
-                                      '\$${(widget.item.price * (_endDate!.difference(_startDate!).inDays + 1)).toStringAsFixed(2)}',
+                                      () {
+                                        int days = _endDate != null && _startDate != null ? _endDate!.difference(_startDate!).inDays + 1 : 0;
+                                        double total = 0;
+                                        if (widget.item.pricePerDay != null) {
+                                          total = widget.item.pricePerDay! * days;
+                                        } else if (widget.item.pricePerHour != null) {
+                                          total = widget.item.pricePerHour! * days * 24;
+                                        }
+                                        return '\$${total.toStringAsFixed(2)}';
+                                      }(),
                                       style: const TextStyle(fontWeight: FontWeight.bold),
                                     ),
                                   ],
@@ -512,7 +568,7 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
           : Padding(
               padding: const EdgeInsets.all(16.0),
               child: ElevatedButton(
-                onPressed: _isRequestingRental ? null : _requestRental,
+                onPressed: (_isRequestingRental || _hasPendingRequest) ? null : _requestRental,
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 50),
                   shape: RoundedRectangleBorder(
@@ -521,9 +577,9 @@ class _ItemDetailsScreenState extends State<ItemDetailsScreen> {
                 ),
                 child: _isRequestingRental
                     ? const CircularProgressIndicator()
-                    : const Text(
-                        'Request to Rent',
-                        style: TextStyle(fontSize: 16),
+                    : Text(
+                        _hasPendingRequest ? 'Request Sent' : 'Request to Rent',
+                        style: const TextStyle(fontSize: 16),
                       ),
               ),
             ),

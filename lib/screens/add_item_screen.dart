@@ -6,7 +6,6 @@ import 'package:locality/services/auth_service.dart';
 import 'package:locality/services/cloudinary_service.dart';
 import 'package:locality/services/database_service.dart';
 
-
 class AddItemScreen extends StatefulWidget {
   final Item? item;
   const AddItemScreen({Key? key, this.item}) : super(key: key);
@@ -19,7 +18,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _priceController = TextEditingController();
+  final _pricePerDayController = TextEditingController();
+  final _pricePerHourController = TextEditingController();
   final _locationController = TextEditingController();
   String _selectedCategory = 'Electronics';
   
@@ -33,7 +33,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
   
   bool _isLoading = false;
   String _error = '';
-  
 
   @override
   void initState() {
@@ -41,7 +40,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
     if (widget.item != null) {
       _nameController.text = widget.item!.name;
       _descriptionController.text = widget.item!.description;
-      _priceController.text = widget.item!.price.toString();
+      _pricePerDayController.text = widget.item!.pricePerDay?.toString() ?? '';
+      _pricePerHourController.text = widget.item!.pricePerHour?.toString() ?? '';
       _locationController.text = widget.item!.location;
       _selectedCategory = widget.item!.category;
       _existingImageUrls = List<String>.from(widget.item!.imageUrls);
@@ -52,7 +52,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
-    _priceController.dispose();
+    _pricePerDayController.dispose();
+    _pricePerHourController.dispose();
     _locationController.dispose();
     super.dispose();
   }
@@ -83,15 +84,27 @@ class _AddItemScreenState extends State<AddItemScreen> {
   
   Future<void> _submitItem() async {
     if (_formKey.currentState!.validate()) {
+      // At least one price must be set
+      final pricePerDay = double.tryParse(_pricePerDayController.text.trim());
+      final pricePerHour = double.tryParse(_pricePerHourController.text.trim());
+      if ((pricePerDay == null || pricePerDay <= 0) && (pricePerHour == null || pricePerHour <= 0)) {
+        setState(() {
+          _error = 'Please enter at least one valid price (per day or per hour)';
+        });
+        return;
+      }
+
       setState(() {
         _isLoading = true;
         _error = '';
       });
+
       try {
         final currentUser = _authService.currentUser;
         if (currentUser == null) {
           throw Exception('User not authenticated');
         }
+
         List<String> newImageUrls = [];
         if (_selectedImages.isNotEmpty) {
           // Upload new images
@@ -101,6 +114,7 @@ class _AddItemScreenState extends State<AddItemScreen> {
             throw Exception('Failed to upload images');
           }
         }
+
         // Combine existing and new images
         final allImageUrls = [..._existingImageUrls, ...newImageUrls];
         if (allImageUrls.isEmpty) {
@@ -118,7 +132,8 @@ class _AddItemScreenState extends State<AddItemScreen> {
             name: _nameController.text.trim(),
             description: _descriptionController.text.trim(),
             category: _selectedCategory,
-            price: double.parse(_priceController.text.trim()),
+            pricePerDay: (pricePerDay != null && pricePerDay > 0) ? pricePerDay : null,
+            pricePerHour: (pricePerHour != null && pricePerHour > 0) ? pricePerHour : null,
             imageUrls: allImageUrls,
             location: _locationController.text.trim(),
           );
@@ -131,12 +146,14 @@ class _AddItemScreenState extends State<AddItemScreen> {
             name: _nameController.text.trim(),
             description: _descriptionController.text.trim(),
             category: _selectedCategory,
-            price: double.parse(_priceController.text.trim()),
+            pricePerDay: (pricePerDay != null && pricePerDay > 0) ? pricePerDay : null,
+            pricePerHour: (pricePerHour != null && pricePerHour > 0) ? pricePerHour : null,
             imageUrls: allImageUrls,
             location: _locationController.text.trim(),
           );
           await _databaseService.updateItem(updatedItem);
         }
+
         if (!mounted) return;
         Navigator.pop(context);
       } catch (e) {
@@ -152,12 +169,12 @@ class _AddItemScreenState extends State<AddItemScreen> {
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.item == null ? 'Add New Item' : 'Edit Item'),
+        title: Text(widget.item == null ? 'Add Item' : 'Update Item'),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -168,13 +185,46 @@ class _AddItemScreenState extends State<AddItemScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Price Per Day
+                    TextFormField(
+                      controller: _pricePerDayController,
+                      decoration: const InputDecoration(
+                        labelText: 'Price per day (\$)',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value != null && value.isNotEmpty && double.tryParse(value) == null) {
+                          return 'Please enter a valid number';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Price Per Hour
+                    TextFormField(
+                      controller: _pricePerHourController,
+                      decoration: const InputDecoration(
+                        labelText: 'Price per hour (\$)',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value != null && value.isNotEmpty && double.tryParse(value) == null) {
+                          return 'Please enter a valid number';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
                     // Images Section
                     const Text(
-                      'Item Images',
+                      'Images',
                       style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
-                    
                     Container(
                       height: 120,
                       child: ListView(
@@ -326,26 +376,6 @@ class _AddItemScreenState extends State<AddItemScreen> {
                         setState(() {
                           _selectedCategory = value!;
                         });
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    
-                    // Price
-                    TextFormField(
-                      controller: _priceController,
-                      decoration: const InputDecoration(
-                        labelText: 'Price per day (\$)',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter a price';
-                        }
-                        if (double.tryParse(value) == null) {
-                          return 'Please enter a valid number';
-                        }
-                        return null;
                       },
                     ),
                     const SizedBox(height: 16),

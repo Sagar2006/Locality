@@ -168,14 +168,16 @@ class _MyItemsScreenState extends State<MyItemsScreen> {
                                   style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w500),
                                 ),
                                 // ...existing code...
-                                  Text(
-                                    '\$${item.price.toStringAsFixed(2)} / day',
-                                    style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.w500),
-                                  ),
-                                  Text(
-                                    '\$${item.price.toStringAsFixed(2)} / day',
-                                    style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.w500),
-                                  ),
+                                  if (item.pricePerDay != null)
+                                    Text(
+                                      '\$${item.pricePerDay!.toStringAsFixed(2)} / day',
+                                      style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.w500),
+                                    ),
+                                  if (item.pricePerHour != null)
+                                    Text(
+                                      '\$${item.pricePerHour!.toStringAsFixed(2)} / hour',
+                                      style: TextStyle(color: Colors.blue[700], fontWeight: FontWeight.w500),
+                                    ),
                               ],
                             ),
                             trailing: Row(

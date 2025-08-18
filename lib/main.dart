@@ -76,19 +76,12 @@ class MyApp extends StatelessWidget {
           selectedColor: colorScheme.secondary,
           labelStyle: const TextStyle(fontFamily: 'Poppins'),
         ),
-        cardTheme: CardThemeData(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 4,
-          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-        ),
       ),
       home: const AuthWrapper(),
       debugShowCheckedModeBanner: false,
       routes: {
         '/home': (context) => const HomeScreen(),
-        '/add-item': (context) => const AddItemScreen(),
+        '/add-item': (context) => AddItemScreen(),
         '/my-items': (context) => const MyItemsScreen(),
         '/requests': (context) => const RequestsScreen(),
         '/profile': (context) => const ProfileScreen(),

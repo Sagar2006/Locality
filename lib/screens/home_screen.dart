@@ -258,7 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const AddItemScreen()),
+            MaterialPageRoute(builder: (context) => AddItemScreen()),
           ).then((_) => _loadItems());
         },
         label: const Text('Add Item'),
