@@ -82,205 +82,174 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Register'),
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // App Logo/Icon
-                const Icon(
-                  Icons.location_city,
-                  size: 80,
-                  color: Colors.blue,
-                ),
-                const SizedBox(height: 20),
-                
-                // App Name
-                const Text(
-                  'Join Locality',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                
-                // Tagline
-                const Text(
-                  'Create an account to start renting',
-                  style: TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 30),
-                
-                // Name Field
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Full Name',
-                    prefixIcon: Icon(Icons.person),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your name';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 15),
-                
-                // Email Field
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email),
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your email';
-                    }
-                    if (!value.contains('@') || !value.contains('.')) {
-                      return 'Please enter a valid email';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 15),
-                
-                // Phone Field
-                TextFormField(
-                  controller: _phoneController,
-                  decoration: const InputDecoration(
-                    labelText: 'Phone Number',
-                    prefixIcon: Icon(Icons.phone),
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.phone,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your phone number';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 15),
-                
-                // Location Field
-                TextFormField(
-                  controller: _locationController,
-                  decoration: const InputDecoration(
-                    labelText: 'Location/Address',
-                    prefixIcon: Icon(Icons.location_on),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your location';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 15),
-                
-                // Password Field
-                TextFormField(
-                  controller: _passwordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: Icon(Icons.lock),
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a password';
-                    }
-                    if (value.length < 6) {
-                      return 'Password must be at least 6 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 15),
-                
-                // Confirm Password Field
-                TextFormField(
-                  controller: _confirmPasswordController,
-                  decoration: const InputDecoration(
-                    labelText: 'Confirm Password',
-                    prefixIcon: Icon(Icons.lock),
-                    border: OutlineInputBorder(),
-                  ),
-                  obscureText: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please confirm your password';
-                    }
-                    if (value != _passwordController.text) {
-                      return 'Passwords do not match';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-                
-                // Error Message
-                if (_error.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 20.0),
-                    child: Text(
-                      _error,
-                      style: const TextStyle(color: Colors.red),
-                    ),
-                  ),
-                
-                // Register Button
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _register,
-                    style: ElevatedButton.styleFrom(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
+      resizeToAvoidBottomInset: true,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Color(0xFFF5F7FF), Color(0xFFF8FBFF)],
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 48),
+              // Car icon
+              const Icon(Icons.directions_car, size: 64, color: Color(0xFF232B38)),
+              const SizedBox(height: 48),
+              // Tab bar for Login/Register
+              DefaultTabController(
+                length: 2,
+                initialIndex: 1,
+                child: Column(
+                  children: [
+                    Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 32),
+                      decoration: const BoxDecoration(
+                        border: Border(bottom: BorderSide(color: Color(0xFF6C63FF), width: 1)),
+                      ),
+                      child: TabBar(
+                        indicatorColor: Color(0xFF6C63FF),
+                        labelColor: Color(0xFF6C63FF),
+                        unselectedLabelColor: Colors.grey,
+                        labelStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+                        tabs: const [
+                          Tab(text: 'Login'),
+                          Tab(text: 'Register'),
+                        ],
+                        onTap: (index) {
+                          if (index == 0) {
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(builder: (context) => const LoginScreen()),
+                            );
+                          }
+                        },
                       ),
                     ),
-                    child: _isLoading
-                        ? const CircularProgressIndicator()
-                        : const Text(
-                            'Register',
-                            style: TextStyle(fontSize: 16),
-                          ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                
-                // Login Link
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Text("Already have an account?"),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(builder: (context) => const LoginScreen()),
-                        );
-                      },
-                      child: const Text('Login'),
+                    const SizedBox(height: 32),
+                    // Register Form
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: const InputDecoration(
+                                labelText: 'Full Name',
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              style: const TextStyle(fontSize: 18),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your name';
+                                }
+                                return null;
+                              },
+                            ),
+                            Container(height: 1, color: Colors.grey[300]),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _emailController,
+                              decoration: const InputDecoration(
+                                labelText: 'Email address',
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              style: const TextStyle(fontSize: 18),
+                              keyboardType: TextInputType.emailAddress,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter your email';
+                                }
+                                if (!value.contains('@') || !value.contains('.')) {
+                                  return 'Please enter a valid email';
+                                }
+                                return null;
+                              },
+                            ),
+                            Container(height: 1, color: Colors.grey[300]),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _passwordController,
+                              decoration: const InputDecoration(
+                                labelText: 'Password',
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(vertical: 16),
+                              ),
+                              style: const TextStyle(fontSize: 18),
+                              obscureText: true,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please enter a password';
+                                }
+                                if (value.length < 6) {
+                                  return 'Password must be at least 6 characters';
+                                }
+                                return null;
+                              },
+                            ),
+                            Container(height: 1, color: Colors.grey[300]),
+                            const SizedBox(height: 32),
+                            // Error Message
+                            if (_error.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 12.0),
+                                child: Text(
+                                  _error,
+                                  style: const TextStyle(color: Colors.red),
+                                ),
+                              ),
+                            // Register Button
+                            SizedBox(
+                              height: 56,
+                              child: ElevatedButton(
+                                onPressed: _isLoading ? null : _register,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF6C63FF),
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12.0),
+                                  ),
+                                  textStyle: const TextStyle(fontSize: 20, fontWeight: FontWeight.w500),
+                                ),
+                                child: _isLoading
+                                    ? const CircularProgressIndicator(color: Colors.white)
+                                    : const Text('Register'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 32.0),
+                child: RichText(
+                  text: TextSpan(
+                    text: 'By continuing, you agree to our ',
+                    style: const TextStyle(color: Colors.grey, fontSize: 16),
+                    children: [
+                      TextSpan(
+                        text: 'Terms of Service',
+                        style: const TextStyle(color: Color(0xFF6C63FF), fontWeight: FontWeight.w500),
+                        // Add gesture recognizer if you want to handle tap
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
           ),
         ),
       ),

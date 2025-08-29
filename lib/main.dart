@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:locality/firebase_options.dart';
 import 'package:locality/screens/add_item_screen.dart';
-import 'package:locality/screens/auth/login_screen.dart';
+import 'package:locality/screens/auth/auth_screen.dart';
 import 'package:locality/screens/home_screen.dart';
 import 'package:locality/screens/item_details_screen.dart';
 import 'package:locality/screens/my_items_screen.dart';
@@ -103,7 +103,7 @@ class AuthWrapper extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.active) {
           final user = snapshot.data;
           if (user == null) {
-            return const LoginScreen();
+            return const AuthScreen();
           }
           return const HomeScreen();
         }
