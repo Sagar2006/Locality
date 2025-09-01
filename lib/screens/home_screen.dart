@@ -62,6 +62,28 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadItems();
+    _debugSvgAssets();
+  }
+
+  void _debugSvgAssets() {
+    print('🔍 Debugging SVG assets...');
+    for (var cat in _categories) {
+      print('📁 Category: ${cat['label']}, SVG path: ${cat['svg']}');
+    }
+    
+    // Try to load one SVG asset to test
+    _testSvgLoading();
+  }
+  
+  void _testSvgLoading() async {
+    try {
+      print('🧪 Testing SVG loading...');
+      final assetBundle = DefaultAssetBundle.of(context);
+      final svgData = await assetBundle.loadString('assets/categoryicons/all.svg');
+      print('✅ SVG loaded successfully, length: ${svgData.length}');
+    } catch (e) {
+      print('❌ Failed to load SVG: $e');
+    }
   }
 
   Future<void> _loadItems() async {
@@ -241,13 +263,42 @@ class _HomeScreenState extends State<HomeScreen> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
+                                  // Test SVG loading without color filter first
                                   SvgPicture.asset(
                                     cat['svg'],
                                     width: 40,
                                     height: 40,
-                                    colorFilter: isSelected 
-                                        ? const ColorFilter.mode(Colors.white, BlendMode.srcIn)
-                                        : const ColorFilter.mode(Color(0xFF2196F3), BlendMode.srcIn),
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      print('❌ Error loading SVG: ${cat['svg']}, Error: $error');
+                                      print('Stack trace: $stackTrace');
+                                      return Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: isSelected ? Colors.white.withOpacity(0.2) : const Color(0xFF2196F3).withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Icon(
+                                          Icons.category,
+                                          color: isSelected ? Colors.white : const Color(0xFF2196F3),
+                                          size: 24,
+                                        ),
+                                      );
+                                    },
+                                    placeholderBuilder: (context) => Container(
+                                      width: 40,
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.hourglass_empty,
+                                        color: Colors.grey,
+                                        size: 20,
+                                      ),
+                                    ),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
