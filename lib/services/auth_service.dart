@@ -59,4 +59,20 @@ class AuthService {
   Future<void> resetPassword(String email) async {
     return await _auth.sendPasswordResetEmail(email: email);
   }
+  
+  // Force refresh the current user
+  Future<void> refreshUser() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user != null) {
+        print('AuthService: Refreshing user token');
+        await user.reload();
+        print('AuthService: User token refreshed');
+      } else {
+        print('AuthService: No user to refresh');
+      }
+    } catch (e) {
+      print('AuthService: Error refreshing user: $e');
+    }
+  }
 }

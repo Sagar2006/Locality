@@ -18,23 +18,37 @@ class DatabaseService {
 
   Future<UserModel?> getUser(String uid) async {
     try {
+      print('DatabaseService: Getting user with uid: $uid');
       final ref = _database.ref().child('users').child(uid);
+      print('DatabaseService: Ref path: ${ref.path}');
+      
       final snapshot = await ref.get();
+      print('DatabaseService: Snapshot exists: ${snapshot.exists}');
+      
       if (snapshot.exists) {
         final raw = snapshot.value;
-        // Realtime DB often returns Map<dynamic, dynamic>
-        if (raw is Map) {
-          final data = Map<String, dynamic>.from(raw as Map);
-          return UserModel.fromMap(data, snapshot.key!);
+        print('DatabaseService: Raw data type: ${raw.runtimeType}');
+        
+        // Improved handling of Firebase Realtime DB data types
+        Map<String, dynamic> data;
+        if (raw is Map<dynamic, dynamic>) {
+          data = Map<String, dynamic>.from(raw);
+        } else if (raw is Map) {
+          data = Map<String, dynamic>.from(raw);
         } else {
-          print('getUser($uid): Unexpected data type: ${raw.runtimeType}');
+          print('DatabaseService: Unexpected data type: ${raw.runtimeType}');
+          return null;
         }
+        
+        print('DatabaseService: Converted data: $data');
+        return UserModel.fromMap(data, snapshot.key!);
       } else {
-        print('getUser($uid): No snapshot at path ${ref.path}');
+        print('DatabaseService: No user data found at path ${ref.path}');
       }
       return null;
     } catch (e) {
-      print('Error getting user: $e');
+      print('DatabaseService: Error getting user: $e');
+      print('DatabaseService: Stack trace: ${StackTrace.current}');
       return null;
     }
   }
