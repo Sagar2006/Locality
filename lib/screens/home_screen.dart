@@ -90,27 +90,6 @@ class _HomeScreenState extends State<HomeScreen> {
     return filtered;
   }
 
-  Widget _buildFeatureChip(String text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2196F3).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: const Color(0xFF2196F3).withOpacity(0.2),
-        ),
-      ),
-      child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-          color: Color(0xFF2196F3),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -266,6 +245,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                     cat['svg'],
                                     width: 40,
                                     height: 40,
+                                    colorFilter: isSelected 
+                                        ? const ColorFilter.mode(Colors.white, BlendMode.srcIn)
+                                        : const ColorFilter.mode(Color(0xFF2196F3), BlendMode.srcIn),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
@@ -398,9 +380,9 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
 
             // Available Items Grid
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
+            SliverPadding(
+              padding: const EdgeInsets.all(24.0),
+              sliver: SliverToBoxAdapter(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -582,122 +564,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                       ),
-
-            // Bottom padding and content
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    Container(
-                      padding: const EdgeInsets.all(24.0),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.05),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          const Icon(
-                            Icons.location_on,
-                            size: 48,
-                            color: Color(0xFF2196F3),
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Find Everything Locally',
-                            style: TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF232B38),
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Connect with your community and rent items you need.\nSave money and reduce waste by borrowing instead of buying.',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey[600],
-                              height: 1.5,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 24),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              _buildFeatureChip('💰 Save Money'),
-                              const SizedBox(width: 12),
-                              _buildFeatureChip('🌱 Eco-Friendly'),
-                              const SizedBox(width: 12),
-                              _buildFeatureChip('🤝 Community'),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                    // Footer
-                    Container(
-                      padding: const EdgeInsets.symmetric(vertical: 16.0),
-                      child: Column(
-                        children: [
-                          Text(
-                            '© 2025 Locality. All rights reserved.',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[500],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              TextButton(
-                                onPressed: () {},
-                                child: Text(
-                                  'Privacy Policy',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ),
-                              Container(
-                                width: 1,
-                                height: 12,
-                                color: Colors.grey[300],
-                                margin: const EdgeInsets.symmetric(horizontal: 8),
-                              ),
-                              TextButton(
-                                onPressed: () {},
-                                child: Text(
-                                  'Terms of Service',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 80), // Extra padding for FAB
-                  ],
-                ),
-              ),
-            ),
           ],
         ),
       ),
