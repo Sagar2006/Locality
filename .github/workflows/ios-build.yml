@@ -33,13 +33,13 @@ jobs:
     - name: Build iOS
       run: |
         echo "Building iOS app..."
-        flutter build ios --release --no-codesign
+        flutter build ios --simulator --release
         echo "iOS build completed successfully!"
 
     - name: Check build output
       run: |
         echo "Checking build output..."
-        ls -la build/ios/iphoneos/ || echo "Build directory not found"
+        ls -la build/ios/iphonesimulator/ || echo "Build directory not found"
 
     - name: Upload iOS build artifacts
       uses: actions/upload-artifact@v4
@@ -47,8 +47,7 @@ jobs:
       with:
         name: ios-build-${{ github.run_number }}
         path: |
-          build/ios/iphoneos/
-          build/ios/archive/
+          build/ios/iphonesimulator/
         retention-days: 30
 
     - name: Upload build logs
