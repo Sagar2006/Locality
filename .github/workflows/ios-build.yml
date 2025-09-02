@@ -24,6 +24,12 @@ jobs:
     - name: Check Flutter version
       run: flutter --version
 
+    - name: Clean iOS build
+      run: |
+        echo "Cleaning iOS build cache..."
+        flutter clean
+        rm -rf ios/Pods ios/Podfile.lock build/ios
+
     - name: Install dependencies
       run: flutter pub get
 
