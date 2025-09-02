@@ -6,61 +6,24 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
-  workflow_dispatch: # Allow manual triggering
 
 jobs:
   build-ios:
     runs-on: macos-latest
-
+    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v2
+    - uses: actions/checkout@v3
+    
+    - uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.22.1'
-
-    - name: Check Flutter version
-      run: flutter --version
-
-    - name: Clean iOS build
-      run: |
-        echo "Cleaning iOS build cache..."
-        flutter clean
-        rm -rf ios/Pods ios/Podfile.lock build/ios
-
-    - name: Install dependencies
-      run: flutter pub get
-
-    - name: Run Flutter doctor
-      run: flutter doctor -v
-
-    - name: Build iOS
-      run: |
-        echo "Building iOS app..."
-        flutter build ios --simulator
-        echo "iOS build completed successfully!"
-
-    - name: Check build output
-      run: |
-        echo "Checking build output..."
-        ls -la build/ios/iphonesimulator/ || echo "Build directory not found"
-
+    
+    - run: flutter pub get
+    
+    - run: flutter build ios --release --no-codesign
+    
     - name: Upload iOS build artifacts
-      uses: actions/upload-artifact@v4
-      if: success()
+      uses: actions/upload-artifact@v3
       with:
-        name: ios-build-${{ github.run_number }}
-        path: |
-          build/ios/iphonesimulator/
-        retention-days: 30
-
-    - name: Upload build logs
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: ios-build-logs-${{ github.run_number }}
-        path: |
-          flutter*.log
-        retention-days: 7
+        name: ios-build
+        path: build/ios/iphoneos/
