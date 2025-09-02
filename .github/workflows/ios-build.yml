@@ -33,7 +33,7 @@ jobs:
     - name: Build iOS
       run: |
         echo "Building iOS app..."
-        flutter build ios --simulator --release
+        flutter build ios --simulator
         echo "iOS build completed successfully!"
 
     - name: Check build output
