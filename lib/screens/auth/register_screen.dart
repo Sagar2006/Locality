@@ -85,48 +85,52 @@ class _RegisterScreenState extends State<RegisterScreen> {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
-          child: Column(
-            children: [
-              // Header
-              Padding(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    IconButton(
-                      onPressed: () => Navigator.of(context).pop(),
-                      icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF6B7280)),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Create Account',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF232B38),
-                        fontFamily: 'Spline Sans',
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Start your rental journey with us.',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF6B7280),
-                        fontFamily: 'Spline Sans',
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              children: [
+                const SizedBox(height: 24),
 
-              // Register Form
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Form(
+                // Back Button
+                Align(
+                  alignment: Alignment.topLeft,
+                  child: IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.arrow_back_ios_new, color: Color(0xFF6B7280)),
+                    style: IconButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Header
+                const Text(
+                  'Create Account',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF232B38),
+                    fontFamily: 'Spline Sans',
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                const Text(
+                  'Start your rental journey with us.',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF6B7280),
+                    fontFamily: 'Spline Sans',
+                  ),
+                ),
+
+                const SizedBox(height: 32),
+
+                // Register Form
+                Form(
                   key: _formKey,
                   child: Column(
                     children: [
@@ -428,8 +432,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ],
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
