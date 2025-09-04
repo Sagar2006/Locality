@@ -11,13 +11,22 @@ import 'package:locality/screens/profile_screen.dart';
 import 'package:locality/screens/requests_screen.dart';
 import 'package:locality/screens/splash_screen.dart';
 import 'package:locality/services/auth_service.dart';
+import 'package:provider/provider.dart';
+import 'package:locality/providers/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -25,66 +34,21 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF1976D2),
-      primary: const Color(0xFF1976D2),
-      secondary: const Color(0xFF43A047),
-      background: const Color(0xFFF5F7FA),
-      surface: Colors.white,
-      error: const Color(0xFFD32F2F),
-      onPrimary: Colors.white,
-      onSecondary: Colors.white,
-      onBackground: Colors.black,
-      onSurface: Colors.black,
-      onError: Colors.white,
-      brightness: Brightness.light,
-    );
-    return MaterialApp(
-      title: 'Locality',
-      theme: ThemeData(
-        colorScheme: colorScheme,
-        useMaterial3: true,
-        fontFamily: 'Poppins',
-        scaffoldBackgroundColor: colorScheme.background,
-        appBarTheme: AppBarTheme(
-          backgroundColor: colorScheme.primary,
-          foregroundColor: colorScheme.onPrimary,
-          elevation: 0,
-          titleTextStyle: const TextStyle(
-            fontFamily: 'Poppins',
-            fontWeight: FontWeight.bold,
-            fontSize: 22,
-            color: Colors.white,
-          ),
-        ),
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
-          backgroundColor: colorScheme.secondary,
-          foregroundColor: colorScheme.onSecondary,
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme.primary),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: colorScheme.primary, width: 2),
-          ),
-        ),
-        chipTheme: ChipThemeData(
-          backgroundColor: colorScheme.secondary.withOpacity(0.1),
-          selectedColor: colorScheme.secondary,
-          labelStyle: const TextStyle(fontFamily: 'Poppins'),
-        ),
-      ),
-      home: const AuthWrapper(),
-      debugShowCheckedModeBanner: false,
-      routes: {
-        '/home': (context) => const HomeScreen(),
-        '/add-item': (context) => AddItemScreen(),
-        '/my-items': (context) => const MyItemsScreen(),
-        '/requests': (context) => const RequestsScreen(),
-        '/profile': (context) => const ProfileScreen(),
+    return Consumer<ThemeProvider>(
+      builder: (context, themeProvider, child) {
+        return MaterialApp(
+          title: 'Rentify',
+          theme: themeProvider.currentTheme,
+          home: const AuthWrapper(),
+          debugShowCheckedModeBanner: false,
+          routes: {
+            '/home': (context) => const HomeScreen(),
+            '/add-item': (context) => AddItemScreen(),
+            '/my-items': (context) => const MyItemsScreen(),
+            '/requests': (context) => const RequestsScreen(),
+            '/profile': (context) => const ProfileScreen(),
+          },
+        );
       },
     );
   }

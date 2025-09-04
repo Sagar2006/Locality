@@ -134,18 +134,31 @@ class DatabaseService {
 
   Future<List<Item>> getItems() async {
     try {
+      print('DatabaseService: Fetching items from Firebase...');
       final snapshot = await _database.ref().child('items').get();
+      print('DatabaseService: Snapshot exists: ${snapshot.exists}');
+      
       if (snapshot.exists) {
         final items = <Item>[];
         final map = snapshot.value as Map<dynamic, dynamic>;
+        print('DatabaseService: Found ${map.length} items in database');
+        
         map.forEach((key, value) {
-          items.add(Item.fromMap(Map<String, dynamic>.from(value), key));
+          try {
+            final item = Item.fromMap(Map<String, dynamic>.from(value), key);
+            items.add(item);
+            print('DatabaseService: Parsed item: ${item.name}');
+          } catch (e) {
+            print('DatabaseService: Error parsing item $key: $e');
+          }
         });
+        print('DatabaseService: Successfully parsed ${items.length} items');
         return items;
       }
+      print('DatabaseService: No items found in database');
       return [];
     } catch (e) {
-      print('Error getting items: $e');
+      print('DatabaseService: Error getting items: $e');
       return [];
     }
   }
