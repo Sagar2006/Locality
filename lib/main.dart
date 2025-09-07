@@ -29,8 +29,28 @@ void main() async {
   );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  bool _showSplash = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Show splash screen for 3 seconds
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        setState(() {
+          _showSplash = false;
+        });
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +59,7 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           title: 'Rentify',
           theme: themeProvider.currentTheme,
-          home: const AuthWrapper(),
+          home: _showSplash ? const SplashScreen() : const AuthWrapper(),
           debugShowCheckedModeBanner: false,
           routes: {
             '/home': (context) => const HomeScreen(),
